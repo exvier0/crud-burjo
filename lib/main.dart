@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'login.dart';
 import 'providers/menu_provider.dart';
+import 'providers/cart_providers.dart';
+import 'providers/pesanan_providers.dart';
+import 'pages/navbar.dart';
 
 void main() {
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => MenuProvider()..loadMenus(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => MenuProvider()..loadMenus()),
+        ChangeNotifierProvider(create: (_) => CartProvider()),
+        ChangeNotifierProvider(create: (_) => PesananProvider()),
+      ],
       child: const MyApp(),
     ),
   );
@@ -18,9 +24,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: LoginPage(),
+      title: 'Burjo Kresna',
+      theme: ThemeData(primarySwatch: Colors.brown, useMaterial3: true),
+      home: const Navbar(),
     );
   }
 }

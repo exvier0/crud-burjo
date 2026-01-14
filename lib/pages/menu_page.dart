@@ -1,150 +1,126 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-import '../models/menu.dart';
-import '../providers/menu_provider.dart';
+import '../providers/menu_provider.dart'; // <-- perbaikan
+import '../providers/cart_providers.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class MenuPage extends StatelessWidget {
   const MenuPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final provider = Provider.of<MenuProvider>(context);
+    final menuProv = Provider.of<MenuProvider>(context);
+    final cartProv = Provider.of<CartProvider>(context, listen: false);
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Daftar Menu")),
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
-        onPressed: () => _showForm(context),
+      backgroundColor: const Color(0xFFFDFBFA),
+      appBar: AppBar(
+        title: Text(
+          "Menu Burjoin",
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: const Color(0xFF5D4037),
+        elevation: 0,
+        centerTitle: true,
       ),
-      body: provider.menus.isEmpty
-          ? const Center(
-              child: Text("Belum ada menu", style: TextStyle(fontSize: 16)),
-            )
-          : ListView.builder(
-              itemCount: provider.menus.length,
+      body: menuProv.menus.isEmpty
+          ? const Center(child: CircularProgressIndicator(color: Colors.brown))
+          : GridView.builder(
+              padding: const EdgeInsets.all(16),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2, // Dua kolom biar rapi
+                childAspectRatio: 0.75,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+              ),
+              itemCount: menuProv.menus.length,
               itemBuilder: (context, index) {
-                final menu = provider.menus[index];
-                return _menuCard(context, menu, index);
+                final menu = menuProv.menus[index];
+                return _buildMenuCard(context, menu, cartProv);
               },
             ),
     );
   }
 
-  // ================= FORM TAMBAH / EDIT =================
-  void _showForm(BuildContext context, {Menu? menu, int? index}) {
-    final nama = TextEditingController(text: menu?.nama);
-    final harga = TextEditingController(
-      text: menu != null ? menu.harga.toString() : "",
-    );
-
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text(menu == null ? "Tambah Menu" : "Edit Menu"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nama,
-              decoration: const InputDecoration(
-                labelText: "Nama Menu",
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: harga,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: "Harga",
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("BATAL"),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (nama.text.isEmpty || harga.text.isEmpty) return;
-
-              final provider = Provider.of<MenuProvider>(
-                context,
-                listen: false,
-              );
-
-              if (menu == null) {
-                provider.addMenu(
-                  Menu(nama: nama.text, harga: int.parse(harga.text)),
-                );
-              } else {
-                provider.updateMenu(
-                  index!,
-                  Menu(nama: nama.text, harga: int.parse(harga.text)),
-                );
-              }
-
-              Navigator.pop(context);
-            },
-            child: const Text("SIMPAN"),
-          ),
+  Widget _buildMenuCard(BuildContext context, menu, cartProv) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
         ],
       ),
-    );
-  }
-
-  // ================= CARD MENU =================
-  Widget _menuCard(BuildContext context, Menu menu, int index) {
-    final provider = Provider.of<MenuProvider>(context, listen: false);
-
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      child: ListTile(
-        leading: const Icon(Icons.fastfood, color: Colors.brown),
-        title: Text(
-          menu.nama,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text("Rp ${menu.harga}"),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.edit, color: Colors.orange),
-              onPressed: () => _showForm(context, menu: menu, index: index),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Gambar/Icon Makanan
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.1),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(20),
+                ),
+              ),
+              child: Icon(
+                menu.jenis == "Makanan" ? Icons.restaurant : Icons.local_drink,
+                size: 50,
+                color: Colors.orange[800],
+              ),
             ),
-            IconButton(
-              icon: const Icon(Icons.delete, color: Colors.red),
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (_) => AlertDialog(
-                    title: const Text("Hapus Menu"),
-                    content: const Text("Yakin ingin menghapus menu ini?"),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text("BATAL"),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          provider.deleteMenu(index);
-                          Navigator.pop(context);
-                        },
-                        child: const Text("HAPUS"),
-                      ),
-                    ],
+          ),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  menu.nama,
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
                   ),
-                );
-              },
+                ),
+                Text(
+                  "Rp ${menu.harga}",
+                  style: GoogleFonts.poppins(
+                    color: Colors.orange[900],
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      cartProv.addToCart(menu);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text("${menu.nama} ditambah ke keranjang"),
+                          duration: const Duration(seconds: 1),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF5D4037),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: EdgeInsets.zero,
+                    ),
+                    child: const Icon(Icons.add, size: 20),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
